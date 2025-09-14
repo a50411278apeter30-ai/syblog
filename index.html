@@ -1,0 +1,2119 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SYBLOG</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .gradient-bg { background: linear-gradient(135deg, #10b981, #059669, #047857); }
+        .profile-gradient { background: linear-gradient(135deg, #10b981, #34d399); }
+        .card-hover { transition: all 0.3s ease; }
+        .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .toggle-switch { position: relative; display: inline-block; width: 60px; height: 34px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #10b981; }
+        input:checked + .slider:before { transform: translateX(26px); }
+        .file-upload-area { border: 2px dashed #10b981; transition: all 0.3s ease; }
+        .file-upload-area:hover { border-color: #059669; background-color: #f0fdf4; }
+        .notification { animation: slideIn 0.3s ease-out; }
+        @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+        @media (max-width: 768px) {
+            .mobile-hidden { display: none !important; }
+            .mobile-full { width: 100% !important; }
+            .mobile-text-sm { font-size: 0.875rem !important; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation -->
+    <nav class="gradient-bg shadow-lg sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center cursor-pointer" onclick="showHome()">
+                    <h1 class="text-2xl font-bold text-white">SYBLOG</h1>
+                </div>
+                <div class="flex items-center space-x-2 md:space-x-4">
+                    <div id="navProfile" class="hidden items-center space-x-2">
+                        <img id="navProfileImg" src="" alt="프로필" class="w-8 h-8 rounded-full border-2 border-white">
+                        <span id="navUsername" class="text-white font-medium mobile-hidden"></span>
+                    </div>
+                    <button id="loginBtn" onclick="showLogin()" class="bg-white text-green-600 px-4 py-2 rounded-lg hover:bg-gray-100 font-medium">
+                        <i class="fas fa-sign-in-alt mr-1"></i>로그인
+                    </button>
+                    <button id="logoutBtn" onclick="logout()" class="hidden bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">
+                        <i class="fas fa-sign-out-alt mr-1"></i>로그아웃
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 py-6">
+        <!-- Home Page -->
+        <div id="homePage" class="space-y-6">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <h2 class="text-3xl font-bold text-gray-800">
+                    <i class="fas fa-home text-green-600 mr-2"></i>블로그 홈
+                </h2>
+                <div class="flex flex-wrap gap-2">
+                    <div class="flex">
+                        <input type="text" id="searchInput" placeholder="검색..." class="px-4 py-2 border border-r-0 rounded-l-lg focus:outline-none focus:border-green-500">
+                        <button onclick="searchPosts()" class="bg-green-500 text-white px-4 py-2 rounded-r-lg hover:bg-green-600">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                    <button id="writePostBtn" onclick="showWritePost()" class="hidden bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">
+                        <i class="fas fa-pen mr-1"></i>글쓰기
+                    </button>
+                    <button id="emailBtn" onclick="showEmail()" class="hidden bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
+                        <i class="fas fa-envelope mr-1"></i>이메일
+                    </button>
+                    <button id="adminPanelBtn" onclick="showAdminPanel()" class="hidden bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600">
+                        <i class="fas fa-cog mr-1"></i>관리자
+                    </button>
+                </div>
+            </div>
+
+            <!-- Enhanced Stats -->
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                <div class="bg-white p-4 rounded-lg shadow card-hover">
+                    <div class="flex items-center">
+                        <i class="fas fa-users text-2xl text-blue-500 mr-3"></i>
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-600">방문자</h3>
+                            <p id="visitorCount" class="text-xl font-bold text-blue-600">0</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow card-hover">
+                    <div class="flex items-center">
+                        <i class="fas fa-file-alt text-2xl text-green-500 mr-3"></i>
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-600">게시글</h3>
+                            <p id="postCount" class="text-xl font-bold text-green-600">0</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow card-hover">
+                    <div class="flex items-center">
+                        <i class="fas fa-comments text-2xl text-yellow-500 mr-3"></i>
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-600">댓글</h3>
+                            <p id="commentCount" class="text-xl font-bold text-yellow-600">0</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow card-hover">
+                    <div class="flex items-center">
+                        <i class="fas fa-user-friends text-2xl text-purple-500 mr-3"></i>
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-600">회원</h3>
+                            <p id="memberCount" class="text-xl font-bold text-purple-600">0</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow card-hover">
+                    <div class="flex items-center">
+                        <i class="fas fa-tags text-2xl text-red-500 mr-3"></i>
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-600">태그</h3>
+                            <p id="tagCount" class="text-xl font-bold text-red-600">0</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow card-hover">
+                    <div class="flex items-center">
+                        <i class="fas fa-folder text-2xl text-indigo-500 mr-3"></i>
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-600">카테고리</h3>
+                            <p id="categoryCount" class="text-xl font-bold text-indigo-600">0</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Tabs -->
+            <div class="flex flex-wrap gap-2 border-b">
+                <button onclick="showAllPosts()" class="px-4 py-2 border-b-2 border-green-500 text-green-600 font-semibold">
+                    <i class="fas fa-list mr-1"></i>전체 글
+                </button>
+                <button onclick="showNotices()" class="px-4 py-2 text-gray-600 hover:text-green-600">
+                    <i class="fas fa-bullhorn mr-1"></i>공지사항
+                </button>
+                <button id="profileBtn" onclick="showProfile()" class="hidden px-4 py-2 text-gray-600 hover:text-green-600">
+                    <i class="fas fa-user mr-1"></i>프로필
+                </button>
+                <button id="editProfileBtn" onclick="showEditProfile()" class="hidden px-4 py-2 text-gray-600 hover:text-green-600">
+                    <i class="fas fa-edit mr-1"></i>정보수정
+                </button>
+            </div>
+
+            <!-- Posts Container -->
+            <div id="postsContainer" class="space-y-4"></div>
+        </div>
+
+        <!-- Other Pages (Login, Register, etc.) -->
+        <div id="loginPage" class="hidden max-w-md mx-auto">
+            <div class="bg-white p-8 rounded-lg shadow-lg">
+                <h2 class="text-2xl font-bold mb-6 text-center text-green-600">
+                    <i class="fas fa-sign-in-alt mr-2"></i>로그인
+                </h2>
+                <form onsubmit="login(event)">
+                    <div class="mb-4">
+                        <label class="block text-gray-700 mb-2">아이디</label>
+                        <input type="text" id="loginId" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500">
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-gray-700 mb-2">비밀번호</label>
+                        <div class="relative">
+                            <input type="password" id="loginPassword" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500">
+                            <button type="button" onclick="togglePassword('loginPassword')" class="absolute right-3 top-2.5 text-gray-500">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full gradient-bg text-white py-2 rounded-lg hover:opacity-90">로그인</button>
+                </form>
+                <div class="mt-4 text-center space-x-2">
+                    <button onclick="showRegister()" class="text-green-500 hover:underline">회원가입</button>
+                    <span>|</span>
+                    <button onclick="showForgotPassword()" class="text-green-500 hover:underline">비밀번호 찾기</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Register Page -->
+        <div id="registerPage" class="hidden max-w-md mx-auto">
+            <div class="bg-white p-8 rounded-lg shadow-lg">
+                <h2 class="text-2xl font-bold mb-6 text-center text-green-600">
+                    <i class="fas fa-user-plus mr-2"></i>회원가입
+                </h2>
+                <form onsubmit="register(event)">
+                    <div class="mb-4">
+                        <label class="block text-gray-700 mb-2">아이디</label>
+                        <input type="text" id="regId" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 mb-2">닉네임</label>
+                        <input type="text" id="regNickname" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500">
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-gray-700 mb-2">비밀번호</label>
+                        <div class="relative">
+                            <input type="password" id="regPassword" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500">
+                            <button type="button" onclick="togglePassword('regPassword')" class="absolute right-3 top-2.5 text-gray-500">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full gradient-bg text-white py-2 rounded-lg hover:opacity-90">가입하기</button>
+                </form>
+                <div class="mt-4 text-center">
+                    <button onclick="showLogin()" class="text-green-500 hover:underline">로그인으로 돌아가기</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Forgot Password Page -->
+        <div id="forgotPasswordPage" class="hidden max-w-md mx-auto">
+            <div class="bg-white p-8 rounded-lg shadow-lg">
+                <h2 class="text-2xl font-bold mb-6 text-center text-green-600">
+                    <i class="fas fa-key mr-2"></i>비밀번호 찾기
+                </h2>
+                <form onsubmit="forgotPassword(event)">
+                    <div class="mb-4">
+                        <label class="block text-gray-700 mb-2">아이디</label>
+                        <input type="text" id="forgotId" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500">
+                    </div>
+                    <button type="submit" class="w-full bg-yellow-500 text-white py-2 rounded-lg hover:bg-yellow-600">비밀번호 재설정</button>
+                </form>
+                <div class="mt-4 text-center">
+                    <button onclick="showLogin()" class="text-green-500 hover:underline">로그인으로 돌아가기</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Write Post Page -->
+        <div id="writePostPage" class="hidden">
+            <div class="bg-white p-6 md:p-8 rounded-lg shadow-lg">
+                <h2 class="text-2xl font-bold mb-6 text-green-600">
+                    <i class="fas fa-pen mr-2"></i>글쓰기
+                </h2>
+                <form onsubmit="writePost(event)">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-gray-700 mb-2">제목</label>
+                            <input type="text" id="postTitle" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 mb-2">카테고리</label>
+                            <input type="text" id="postCategory" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500">
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 mb-2">태그 (쉼표로 구분)</label>
+                        <input type="text" id="postTags" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 mb-2">내용 (HTML 지원)</label>
+                        <textarea id="postContent" rows="10" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500"></textarea>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 mb-2">파일 첨부</label>
+                        <div class="file-upload-area p-6 rounded-lg text-center">
+                            <input type="file" id="postFile" multiple class="hidden">
+                            <div onclick="document.getElementById('postFile').click()" class="cursor-pointer">
+                                <i class="fas fa-cloud-upload-alt text-4xl text-green-500 mb-2"></i>
+                                <p class="text-gray-600">클릭하여 파일을 선택하거나 드래그하여 업로드</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="flex items-center">
+                            <input type="checkbox" id="isNotice" class="mr-2">
+                            <span class="text-gray-700">공지사항으로 게시</span>
+                        </label>
+                    </div>
+                    <div class="flex flex-col md:flex-row gap-4">
+                        <button type="submit" class="gradient-bg text-white px-6 py-2 rounded-lg hover:opacity-90">
+                            <i class="fas fa-paper-plane mr-1"></i>게시하기
+                        </button>
+                        <button type="button" onclick="showHome()" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600">
+                            <i class="fas fa-times mr-1"></i>취소
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Email Page -->
+        <div id="emailPage" class="hidden">
+            <div class="bg-white p-6 md:p-8 rounded-lg shadow-lg">
+                <h2 class="text-2xl font-bold mb-6 text-blue-600">
+                    <i class="fas fa-envelope mr-2"></i>SY 이메일
+                </h2>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-1">
+                        <h3 class="text-lg font-semibold mb-4">받은 편지함</h3>
+                        <div id="emailList" class="space-y-2 max-h-96 overflow-y-auto"></div>
+                    </div>
+                    <div class="lg:col-span-2">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-semibold">새 메일 작성</h3>
+                            <button onclick="showHome()" class="text-gray-500 hover:text-gray-700">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <form onsubmit="sendEmail(event)">
+                            <div class="mb-4">
+                                <label class="block text-gray-700 mb-2">받는 사람</label>
+                                <div class="relative">
+                                    <input type="text" id="emailRecipient" placeholder="닉네임으로 검색..." class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500">
+                                    <div id="userSuggestions" class="absolute z-10 w-full bg-white border rounded-lg mt-1 hidden max-h-40 overflow-y-auto"></div>
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-gray-700 mb-2">제목</label>
+                                <input type="text" id="emailSubject" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500">
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-gray-700 mb-2">내용</label>
+                                <textarea id="emailContent" rows="8" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500"></textarea>
+                            </div>
+                            <button type="submit" class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600">
+                                <i class="fas fa-paper-plane mr-1"></i>전송
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Page -->
+        <div id="profilePage" class="hidden">
+            <div class="bg-white p-6 md:p-8 rounded-lg shadow-lg">
+                <div id="profileContent"></div>
+            </div>
+        </div>
+
+        <!-- Admin Panel -->
+        <div id="adminPanel" class="hidden">
+            <div class="bg-white p-6 md:p-8 rounded-lg shadow-lg">
+                <h2 class="text-2xl font-bold mb-6 text-purple-600">
+                    <i class="fas fa-cog mr-2"></i>관리자 패널
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="space-y-3">
+                        <h3 class="text-lg font-semibold text-gray-800">회원 관리</h3>
+                        <button onclick="showAddMember()" class="w-full bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">
+                            <i class="fas fa-user-plus mr-2"></i>회원 추가
+                        </button>
+                        <button onclick="showMemberList()" class="w-full bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
+                            <i class="fas fa-users mr-2"></i>회원 목록
+                        </button>
+                    </div>
+                    <div class="space-y-3">
+                        <h3 class="text-lg font-semibold text-gray-800">콘텐츠 관리</h3>
+                        <button onclick="showPostManagement()" class="w-full bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600">
+                            <i class="fas fa-file-alt mr-2"></i>게시글 관리
+                        </button>
+                        <button onclick="showCommentManagement()" class="w-full bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600">
+                            <i class="fas fa-comments mr-2"></i>댓글 관리
+                        </button>
+                    </div>
+                    <div class="space-y-3">
+                        <h3 class="text-lg font-semibold text-gray-800">시스템 관리</h3>
+                        <button onclick="showEditHTML()" class="w-full bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">
+                            <i class="fas fa-code mr-2"></i>HTML 수정
+                        </button>
+                        <button onclick="showBackupManager()" class="w-full bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600">
+                            <i class="fas fa-database mr-2"></i>백업 관리
+                        </button>
+                        <button onclick="backupData()" class="w-full bg-indigo-500 text-white px-4 py-2 rounded-lg hover:bg-indigo-600">
+                            <i class="fas fa-download mr-2"></i>수동 백업
+                        </button>
+                        <button onclick="showHome()" class="w-full bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600">
+                            <i class="fas fa-home mr-2"></i>홈으로
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Attendance Button -->
+    <button id="attendanceBtn" onclick="checkAttendance()" class="fixed bottom-6 right-6 bg-green-500 text-white p-4 rounded-full shadow-lg hover:bg-green-600 hidden z-50">
+        <i class="fas fa-calendar-check text-xl"></i>
+    </button>
+
+    <!-- Notification -->
+    <div id="notification" class="fixed top-20 right-4 z-50 hidden max-w-sm">
+        <div class="bg-white border-l-4 border-green-500 p-4 rounded-lg shadow-lg">
+            <div class="flex items-center">
+                <i id="notificationIcon" class="fas fa-info-circle text-green-500 mr-3"></i>
+                <span id="notificationText" class="text-gray-800"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Container -->
+    <div id="modalContainer"></div>
+
+    <script>
+        let currentUser = null, posts = [], users = [], comments = [], follows = [], attendance = [], emails = [];
+        let autoBackupInterval;
+
+        function initApp() {
+            loadData();
+            updateVisitorCount();
+            updateStats();
+            checkAutoLogin();
+            showHome();
+            startAutoBackup();
+        }
+
+        function loadData() {
+            users = JSON.parse(localStorage.getItem('syblog_users') || '[]');
+            posts = JSON.parse(localStorage.getItem('syblog_posts') || '[]');
+            comments = JSON.parse(localStorage.getItem('syblog_comments') || '[]');
+            follows = JSON.parse(localStorage.getItem('syblog_follows') || '[]');
+            attendance = JSON.parse(localStorage.getItem('syblog_attendance') || '[]');
+            emails = JSON.parse(localStorage.getItem('syblog_emails') || '[]');
+            
+            if (users.length === 0) {
+                users.push({
+                    id: 'peterpeter8585', password: '1234aiai', nickname: '관리자', isAdmin: true,
+                    isBlocked: false, needsPasswordReset: false, profileImage: '', autoAttendance: false,
+                    joinDate: new Date().toISOString(), followers: 0, following: 0
+                });
+                saveData();
+            }
+        }
+
+        function saveData() {
+            localStorage.setItem('syblog_users', JSON.stringify(users));
+            localStorage.setItem('syblog_posts', JSON.stringify(posts));
+            localStorage.setItem('syblog_comments', JSON.stringify(comments));
+            localStorage.setItem('syblog_follows', JSON.stringify(follows));
+            localStorage.setItem('syblog_attendance', JSON.stringify(attendance));
+            localStorage.setItem('syblog_emails', JSON.stringify(emails));
+        }
+
+        function startAutoBackup() {
+            // 기존 인터벌 정리
+            if (autoBackupInterval) {
+                clearInterval(autoBackupInterval);
+            }
+            
+            // 매초마다 자동 백업 실행
+            autoBackupInterval = setInterval(() => {
+                try {
+                    const backup = {
+                        users, posts, comments, follows, attendance, emails,
+                        html: `<!DOCTYPE html>\n${document.documentElement.outerHTML}`,
+                        timestamp: new Date().toISOString(),
+                        version: '2.0'
+                    };
+                    
+                    // 메인 자동 백업
+                    localStorage.setItem('syblog_auto_backup', JSON.stringify(backup));
+                    
+                    // 시간별 백업 (최대 24개 보관)
+                    const hourlyKey = `syblog_hourly_backup_${new Date().getHours()}`;
+                    localStorage.setItem(hourlyKey, JSON.stringify(backup));
+                    
+                    // 일별 백업 (최대 7개 보관)
+                    const dailyKey = `syblog_daily_backup_${new Date().getDay()}`;
+                    localStorage.setItem(dailyKey, JSON.stringify(backup));
+                    
+                    // 백업 상태 표시 업데이트
+                    updateBackupStatus();
+                    
+                } catch (error) {
+                    console.error('자동 백업 오류:', error);
+                }
+            }, 1000);
+            
+            console.log('자동 백업 시스템이 시작되었습니다 (매초 실행)');
+        }
+
+        function updateBackupStatus() {
+            const statusElement = document.getElementById('backupStatus');
+            if (statusElement) {
+                const now = new Date();
+                statusElement.innerHTML = `
+                    <i class="fas fa-check-circle text-green-500 mr-1"></i>
+                    마지막 백업: ${now.toLocaleTimeString()}
+                `;
+            }
+        }
+
+        function stopAutoBackup() {
+            if (autoBackupInterval) {
+                clearInterval(autoBackupInterval);
+                autoBackupInterval = null;
+                console.log('자동 백업이 중지되었습니다.');
+            }
+        }
+
+        function restoreFromBackup(backupType = 'auto') {
+            let backupKey = 'syblog_auto_backup';
+            
+            if (backupType !== 'auto') {
+                backupKey = backupType;
+            }
+            
+            const backup = localStorage.getItem(backupKey);
+            if (!backup) {
+                showNotification('백업 데이터를 찾을 수 없습니다.', 'error');
+                return;
+            }
+            
+            if (!confirm('백업 데이터로 복원하시겠습니까? 현재 데이터는 모두 사라집니다.')) {
+                return;
+            }
+            
+            try {
+                const backupData = JSON.parse(backup);
+                
+                // 데이터 복원
+                users = backupData.users || [];
+                posts = backupData.posts || [];
+                comments = backupData.comments || [];
+                follows = backupData.follows || [];
+                attendance = backupData.attendance || [];
+                emails = backupData.emails || [];
+                
+                saveData();
+                
+                // HTML 복원 (있는 경우)
+                if (backupData.html) {
+                    if (confirm('HTML도 함께 복원하시겠습니까?')) {
+                        document.open();
+                        document.write(backupData.html);
+                        document.close();
+                        return;
+                    }
+                }
+                
+                // 페이지 새로고침
+                location.reload();
+                
+            } catch (error) {
+                showNotification('백업 복원 중 오류가 발생했습니다.', 'error');
+                console.error('백업 복원 오류:', error);
+            }
+        }
+
+        function showBackupManager() {
+            const autoBackup = localStorage.getItem('syblog_auto_backup');
+            const autoBackupData = autoBackup ? JSON.parse(autoBackup) : null;
+            
+            // 시간별 백업 목록
+            const hourlyBackups = [];
+            for (let i = 0; i < 24; i++) {
+                const backup = localStorage.getItem(`syblog_hourly_backup_${i}`);
+                if (backup) {
+                    const data = JSON.parse(backup);
+                    hourlyBackups.push({ hour: i, data, key: `syblog_hourly_backup_${i}` });
+                }
+            }
+            
+            // 일별 백업 목록
+            const dailyBackups = [];
+            const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+            for (let i = 0; i < 7; i++) {
+                const backup = localStorage.getItem(`syblog_daily_backup_${i}`);
+                if (backup) {
+                    const data = JSON.parse(backup);
+                    dailyBackups.push({ day: dayNames[i], data, key: `syblog_daily_backup_${i}` });
+                }
+            }
+            
+            showModal('백업 관리', `
+                <div class="space-y-6">
+                    <!-- 자동 백업 상태 -->
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <h4 class="font-semibold text-green-800 mb-2">
+                            <i class="fas fa-robot mr-2"></i>자동 백업 상태
+                        </h4>
+                        <div id="backupStatus" class="text-sm text-green-700">
+                            ${autoBackupData ? `
+                                <i class="fas fa-check-circle text-green-500 mr-1"></i>
+                                마지막 백업: ${new Date(autoBackupData.timestamp).toLocaleString()}
+                            ` : '백업 데이터 없음'}
+                        </div>
+                        <div class="mt-3 flex space-x-2">
+                            <button onclick="restoreFromBackup('auto')" class="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600" ${!autoBackupData ? 'disabled' : ''}>
+                                <i class="fas fa-undo mr-1"></i>최신 백업 복원
+                            </button>
+                            <button onclick="downloadBackup('auto')" class="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600" ${!autoBackupData ? 'disabled' : ''}>
+                                <i class="fas fa-download mr-1"></i>백업 다운로드
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 시간별 백업 -->
+                    <div>
+                        <h4 class="font-semibold text-gray-800 mb-3">
+                            <i class="fas fa-clock mr-2"></i>시간별 백업 (${hourlyBackups.length}/24)
+                        </h4>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 max-h-40 overflow-y-auto">
+                            ${hourlyBackups.map(backup => `
+                                <div class="bg-gray-50 border rounded p-2 text-center">
+                                    <div class="font-semibold">${backup.hour}시</div>
+                                    <div class="text-xs text-gray-600">${new Date(backup.data.timestamp).toLocaleDateString()}</div>
+                                    <div class="mt-1 flex justify-center space-x-1">
+                                        <button onclick="restoreFromBackup('${backup.key}')" class="bg-green-500 text-white px-2 py-1 rounded text-xs hover:bg-green-600">
+                                            복원
+                                        </button>
+                                        <button onclick="downloadBackup('${backup.key}')" class="bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600">
+                                            다운로드
+                                        </button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    
+                    <!-- 일별 백업 -->
+                    <div>
+                        <h4 class="font-semibold text-gray-800 mb-3">
+                            <i class="fas fa-calendar mr-2"></i>일별 백업 (${dailyBackups.length}/7)
+                        </h4>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                            ${dailyBackups.map(backup => `
+                                <div class="bg-gray-50 border rounded p-2 text-center">
+                                    <div class="font-semibold">${backup.day}요일</div>
+                                    <div class="text-xs text-gray-600">${new Date(backup.data.timestamp).toLocaleDateString()}</div>
+                                    <div class="mt-1 flex justify-center space-x-1">
+                                        <button onclick="restoreFromBackup('${backup.key}')" class="bg-green-500 text-white px-2 py-1 rounded text-xs hover:bg-green-600">
+                                            복원
+                                        </button>
+                                        <button onclick="downloadBackup('${backup.key}')" class="bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600">
+                                            다운로드
+                                        </button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    
+                    <!-- 백업 제어 -->
+                    <div class="bg-gray-50 border rounded-lg p-4">
+                        <h4 class="font-semibold text-gray-800 mb-3">
+                            <i class="fas fa-cogs mr-2"></i>백업 제어
+                        </h4>
+                        <div class="flex flex-wrap gap-2">
+                            <button onclick="backupData()" class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
+                                <i class="fas fa-save mr-1"></i>수동 백업
+                            </button>
+                            <button onclick="clearAllBackups()" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
+                                <i class="fas fa-trash mr-1"></i>모든 백업 삭제
+                            </button>
+                            <button onclick="exportAllBackups()" class="bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600">
+                                <i class="fas fa-file-export mr-1"></i>전체 백업 내보내기
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `, 'large');
+        }
+
+        function downloadBackup(backupKey) {
+            const backup = localStorage.getItem(backupKey);
+            if (!backup) {
+                showNotification('백업 데이터를 찾을 수 없습니다.', 'error');
+                return;
+            }
+            
+            const blob = new Blob([backup], { type: 'application/json' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `${backupKey}_${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            
+            showNotification('백업 파일이 다운로드되었습니다!', 'success');
+        }
+
+        function clearAllBackups() {
+            if (!confirm('정말로 모든 백업을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
+                return;
+            }
+            
+            // 자동 백업 삭제
+            localStorage.removeItem('syblog_auto_backup');
+            
+            // 시간별 백업 삭제
+            for (let i = 0; i < 24; i++) {
+                localStorage.removeItem(`syblog_hourly_backup_${i}`);
+            }
+            
+            // 일별 백업 삭제
+            for (let i = 0; i < 7; i++) {
+                localStorage.removeItem(`syblog_daily_backup_${i}`);
+            }
+            
+            // HTML 백업 삭제
+            localStorage.removeItem('syblog_html_backup');
+            
+            showNotification('모든 백업이 삭제되었습니다.', 'success');
+            closeModal();
+        }
+
+        function exportAllBackups() {
+            const allBackups = {
+                auto: localStorage.getItem('syblog_auto_backup'),
+                hourly: {},
+                daily: {},
+                html: localStorage.getItem('syblog_html_backup'),
+                exportDate: new Date().toISOString()
+            };
+            
+            // 시간별 백업 수집
+            for (let i = 0; i < 24; i++) {
+                const backup = localStorage.getItem(`syblog_hourly_backup_${i}`);
+                if (backup) allBackups.hourly[i] = backup;
+            }
+            
+            // 일별 백업 수집
+            for (let i = 0; i < 7; i++) {
+                const backup = localStorage.getItem(`syblog_daily_backup_${i}`);
+                if (backup) allBackups.daily[i] = backup;
+            }
+            
+            const blob = new Blob([JSON.stringify(allBackups, null, 2)], { type: 'application/json' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `syblog_all_backups_${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            
+            showNotification('전체 백업이 내보내기되었습니다!', 'success');
+        }
+
+        function updateVisitorCount() {
+            let count = parseInt(localStorage.getItem('syblog_visitors') || '0');
+            count++;
+            localStorage.setItem('syblog_visitors', count.toString());
+            document.getElementById('visitorCount').textContent = count;
+        }
+
+        function updateStats() {
+            document.getElementById('postCount').textContent = posts.length;
+            document.getElementById('commentCount').textContent = comments.length;
+            document.getElementById('memberCount').textContent = users.length;
+            
+            const allTags = posts.flatMap(p => p.tags || []);
+            const uniqueTags = [...new Set(allTags)];
+            document.getElementById('tagCount').textContent = uniqueTags.length;
+            
+            const allCategories = posts.map(p => p.category).filter(c => c);
+            const uniqueCategories = [...new Set(allCategories)];
+            document.getElementById('categoryCount').textContent = uniqueCategories.length;
+        }
+
+        function login(event) {
+            event.preventDefault();
+            const id = document.getElementById('loginId').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            const user = users.find(u => u.id === id && u.password === password);
+            
+            if (!user) {
+                showNotification('아이디 또는 비밀번호가 잘못되었습니다.', 'error');
+                return;
+            }
+            
+            if (user.isBlocked) {
+                showNotification('차단된 계정입니다.', 'error');
+                return;
+            }
+            
+            if (user.needsPasswordReset) {
+                showNotification('비밀번호를 재설정해야 합니다.', 'error');
+                return;
+            }
+            
+            currentUser = user;
+            localStorage.setItem('syblog_currentUser', JSON.stringify(user));
+            updateUI();
+            showHome();
+            showNotification('로그인되었습니다!', 'success');
+            
+            if (user.autoAttendance) checkAttendance();
+        }
+
+        function logout() {
+            currentUser = null;
+            localStorage.removeItem('syblog_currentUser');
+            updateUI();
+            showHome();
+            showNotification('로그아웃되었습니다.', 'success');
+        }
+
+        function register(event) {
+            event.preventDefault();
+            const id = document.getElementById('regId').value;
+            const nickname = document.getElementById('regNickname').value;
+            const password = document.getElementById('regPassword').value;
+            
+            if (users.find(u => u.id === id)) {
+                showNotification('이미 존재하는 아이디입니다.', 'error');
+                return;
+            }
+            
+            if (users.find(u => u.nickname === nickname)) {
+                showNotification('이미 존재하는 닉네임입니다.', 'error');
+                return;
+            }
+            
+            const newUser = {
+                id, password, nickname, isAdmin: false, isBlocked: false, needsPasswordReset: false,
+                profileImage: generateProfileImage(nickname), autoAttendance: false,
+                joinDate: new Date().toISOString(), followers: 0, following: 0
+            };
+            
+            users.push(newUser);
+            saveData();
+            showNotification('회원가입이 완료되었습니다!', 'success');
+            showLogin();
+        }
+
+        function forgotPassword(event) {
+            event.preventDefault();
+            const id = document.getElementById('forgotId').value;
+            
+            const user = users.find(u => u.id === id);
+            if (!user) {
+                showNotification('존재하지 않는 아이디입니다.', 'error');
+                return;
+            }
+            
+            const tempPassword = generateRandomPassword();
+            user.needsPasswordReset = true;
+            user.password = tempPassword;
+            saveData();
+            
+            showModal('임시 비밀번호', `
+                <p class="mb-4">임시 비밀번호가 생성되었습니다:</p>
+                <div class="bg-gray-100 p-3 rounded flex items-center justify-between">
+                    <code class="text-lg font-mono">${tempPassword}</code>
+                    <button onclick="copyToClipboard('${tempPassword}')" class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600">
+                        <i class="fas fa-copy"></i> 복사
+                    </button>
+                </div>
+                <p class="mt-4 text-red-600">로그인 후 반드시 비밀번호를 변경하세요.</p>
+            `);
+        }
+
+        function generateRandomPassword() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            let result = '';
+            for (let i = 0; i < 8; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+        }
+
+        function generateProfileImage(nickname) {
+            const firstChar = nickname.charAt(0).toUpperCase();
+            const canvas = document.createElement('canvas');
+            canvas.width = 100;
+            canvas.height = 100;
+            const ctx = canvas.getContext('2d');
+            
+            const gradient = ctx.createLinearGradient(0, 0, 100, 100);
+            gradient.addColorStop(0, '#10b981');
+            gradient.addColorStop(1, '#34d399');
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 100, 100);
+            
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 40px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(firstChar, 50, 50);
+            
+            return canvas.toDataURL();
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showNotification('클립보드에 복사되었습니다!', 'success');
+            });
+        }
+
+        function checkAutoLogin() {
+            const savedUser = localStorage.getItem('syblog_currentUser');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                updateUI();
+            }
+        }
+
+        function updateUI() {
+            const elements = {
+                loginBtn: document.getElementById('loginBtn'),
+                logoutBtn: document.getElementById('logoutBtn'),
+                writePostBtn: document.getElementById('writePostBtn'),
+                emailBtn: document.getElementById('emailBtn'),
+                adminPanelBtn: document.getElementById('adminPanelBtn'),
+                profileBtn: document.getElementById('profileBtn'),
+                editProfileBtn: document.getElementById('editProfileBtn'),
+                attendanceBtn: document.getElementById('attendanceBtn'),
+                navProfile: document.getElementById('navProfile')
+            };
+            
+            if (currentUser) {
+                elements.loginBtn.classList.add('hidden');
+                elements.logoutBtn.classList.remove('hidden');
+                elements.writePostBtn.classList.remove('hidden');
+                elements.emailBtn.classList.remove('hidden');
+                elements.profileBtn.classList.remove('hidden');
+                elements.editProfileBtn.classList.remove('hidden');
+                elements.navProfile.classList.remove('hidden');
+                
+                document.getElementById('navUsername').textContent = currentUser.nickname;
+                document.getElementById('navProfileImg').src = currentUser.profileImage || generateProfileImage(currentUser.nickname);
+                
+                if (currentUser.isAdmin) elements.adminPanelBtn.classList.remove('hidden');
+                if (!currentUser.autoAttendance) elements.attendanceBtn.classList.remove('hidden');
+            } else {
+                elements.loginBtn.classList.remove('hidden');
+                elements.logoutBtn.classList.add('hidden');
+                elements.writePostBtn.classList.add('hidden');
+                elements.emailBtn.classList.add('hidden');
+                elements.adminPanelBtn.classList.add('hidden');
+                elements.profileBtn.classList.add('hidden');
+                elements.editProfileBtn.classList.add('hidden');
+                elements.attendanceBtn.classList.add('hidden');
+                elements.navProfile.classList.add('hidden');
+            }
+        }
+
+        function showHome() {
+            hideAllPages();
+            document.getElementById('homePage').classList.remove('hidden');
+            showAllPosts();
+        }
+
+        function showLogin() {
+            hideAllPages();
+            document.getElementById('loginPage').classList.remove('hidden');
+        }
+
+        function showRegister() {
+            hideAllPages();
+            document.getElementById('registerPage').classList.remove('hidden');
+        }
+
+        function showForgotPassword() {
+            hideAllPages();
+            document.getElementById('forgotPasswordPage').classList.remove('hidden');
+        }
+
+        function showWritePost() {
+            if (!currentUser) {
+                showNotification('로그인이 필요합니다.', 'error');
+                return;
+            }
+            hideAllPages();
+            document.getElementById('writePostPage').classList.remove('hidden');
+            
+            const noticeCheckbox = document.getElementById('isNotice').parentElement;
+            if (currentUser.isAdmin) {
+                noticeCheckbox.classList.remove('hidden');
+            } else {
+                noticeCheckbox.classList.add('hidden');
+            }
+        }
+
+        function showEmail() {
+            if (!currentUser) {
+                showNotification('로그인이 필요합니다.', 'error');
+                return;
+            }
+            hideAllPages();
+            document.getElementById('emailPage').classList.remove('hidden');
+            loadEmails();
+            setupEmailSearch();
+        }
+
+        function showProfile(userId = null) {
+            const targetUserId = userId || (currentUser ? currentUser.id : null);
+            if (!targetUserId) return;
+            
+            const user = users.find(u => u.id === targetUserId);
+            if (!user) return;
+            
+            hideAllPages();
+            document.getElementById('profilePage').classList.remove('hidden');
+            
+            const userPosts = posts.filter(p => p.authorId === targetUserId);
+            const userComments = comments.filter(c => c.authorId === targetUserId);
+            const totalLikes = userPosts.reduce((sum, post) => sum + (post.likes || 0), 0);
+            const followerCount = follows.filter(f => f.followingId === targetUserId).length;
+            const followingCount = follows.filter(f => f.followerId === targetUserId).length;
+            
+            document.getElementById('profileContent').innerHTML = `
+                <div class="flex flex-col md:flex-row items-center md:items-start space-y-4 md:space-y-0 md:space-x-6 mb-6">
+                    <img src="${user.profileImage || generateProfileImage(user.nickname)}" alt="프로필" class="w-24 h-24 rounded-full border-4 border-green-500">
+                    <div class="text-center md:text-left">
+                        <h3 class="text-2xl font-bold text-gray-800">${user.nickname}</h3>
+                        <p class="text-gray-600">가입일: ${new Date(user.joinDate).toLocaleDateString()}</p>
+                        ${currentUser && currentUser.id !== targetUserId ? `
+                            <button onclick="toggleFollow('${targetUserId}')" class="mt-2 px-4 py-2 rounded-lg ${isFollowing(targetUserId) ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'} text-white">
+                                <i class="fas ${isFollowing(targetUserId) ? 'fa-user-minus' : 'fa-user-plus'} mr-1"></i>
+                                ${isFollowing(targetUserId) ? '언팔로우' : '팔로우'}
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <div class="text-center bg-blue-50 p-4 rounded-lg">
+                        <div class="text-2xl font-bold text-blue-600">${userPosts.length}</div>
+                        <div class="text-gray-600">게시글</div>
+                    </div>
+                    <div class="text-center bg-green-50 p-4 rounded-lg">
+                        <div class="text-2xl font-bold text-green-600">${userComments.length}</div>
+                        <div class="text-gray-600">댓글</div>
+                    </div>
+                    <div class="text-center bg-red-50 p-4 rounded-lg">
+                        <div class="text-2xl font-bold text-red-600">${totalLikes}</div>
+                        <div class="text-gray-600">좋아요</div>
+                    </div>
+                    <div class="text-center bg-purple-50 p-4 rounded-lg">
+                        <div class="text-2xl font-bold text-purple-600">${followerCount}</div>
+                        <div class="text-gray-600">팔로워</div>
+                    </div>
+                </div>
+                
+                <div class="space-y-4">
+                    <h4 class="text-lg font-semibold flex items-center">
+                        <i class="fas fa-file-alt text-green-500 mr-2"></i>최근 게시글
+                    </h4>
+                    ${userPosts.slice(0, 5).map(post => `
+                        <div class="border-l-4 border-green-500 pl-4 bg-gray-50 p-3 rounded">
+                            <h5 class="font-semibold">${post.title}</h5>
+                            <p class="text-gray-600 text-sm">${new Date(post.createdAt).toLocaleDateString()}</p>
+                        </div>
+                    `).join('') || '<p class="text-gray-500">작성한 게시글이 없습니다.</p>'}
+                </div>
+            `;
+        }
+
+        function showEditProfile() {
+            if (!currentUser) return;
+            
+            showModal('회원정보 수정', `
+                <form onsubmit="updateProfile(event)">
+                    <div class="mb-4">
+                        <label class="block text-gray-700 mb-2">닉네임</label>
+                        <input type="text" id="editNickname" value="${currentUser.nickname}" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 mb-2">새 비밀번호 (변경시에만 입력)</label>
+                        <div class="relative">
+                            <input type="password" id="editPassword" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500">
+                            <button type="button" onclick="togglePassword('editPassword')" class="absolute right-3 top-2.5 text-gray-500">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 mb-2">프로필 이미지</label>
+                        <input type="file" id="profileImage" accept="image/*" class="w-full px-4 py-2 border rounded-lg">
+                        <button type="button" onclick="removeProfileImage()" class="mt-2 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
+                            <i class="fas fa-trash mr-1"></i>프로필 이미지 삭제
+                        </button>
+                    </div>
+                    <div class="mb-6">
+                        <label class="flex items-center justify-between">
+                            <span class="text-gray-700">자동 출석체크</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="autoAttendance" ${currentUser.autoAttendance ? 'checked' : ''}>
+                                <span class="slider"></span>
+                            </label>
+                        </label>
+                    </div>
+                    <div class="flex space-x-4">
+                        <button type="submit" class="gradient-bg text-white px-6 py-2 rounded-lg hover:opacity-90">
+                            <i class="fas fa-save mr-1"></i>수정하기
+                        </button>
+                        <button type="button" onclick="closeModal()" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600">
+                            <i class="fas fa-times mr-1"></i>취소
+                        </button>
+                    </div>
+                </form>
+            `);
+        }
+
+        function showAdminPanel() {
+            if (!currentUser || !currentUser.isAdmin) return;
+            hideAllPages();
+            document.getElementById('adminPanel').classList.remove('hidden');
+        }
+
+        function hideAllPages() {
+            const pages = ['homePage', 'loginPage', 'registerPage', 'forgotPasswordPage', 'writePostPage', 'emailPage', 'profilePage', 'adminPanel'];
+            pages.forEach(page => document.getElementById(page).classList.add('hidden'));
+        }
+
+        function writePost(event) {
+            event.preventDefault();
+            
+            const title = document.getElementById('postTitle').value;
+            const content = document.getElementById('postContent').value;
+            const category = document.getElementById('postCategory').value;
+            const tags = document.getElementById('postTags').value.split(',').map(t => t.trim()).filter(t => t);
+            const isNotice = document.getElementById('isNotice').checked;
+            const fileInput = document.getElementById('postFile');
+            
+            if (containsBadWords(title) || containsBadWords(content)) {
+                showNotification('부적절한 내용이 포함되어 있습니다.', 'error');
+                return;
+            }
+            
+            const post = {
+                id: Date.now().toString(), title, content, category, tags,
+                authorId: currentUser.id, authorNickname: currentUser.nickname,
+                authorProfileImage: currentUser.profileImage || generateProfileImage(currentUser.nickname),
+                createdAt: new Date().toISOString(), isNotice: isNotice && currentUser.isAdmin,
+                likes: 0, likedBy: [], files: []
+            };
+            
+            if (fileInput.files.length > 0) {
+                let filesProcessed = 0;
+                for (let file of fileInput.files) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        post.files.push({
+                            name: file.name, type: file.type, size: file.size, data: e.target.result
+                        });
+                        filesProcessed++;
+                        if (filesProcessed === fileInput.files.length) {
+                            posts.unshift(post);
+                            saveData();
+                            showHome();
+                            showNotification('게시글이 작성되었습니다!', 'success');
+                            if (content.includes('<') && content.includes('>')) {
+                                showNotification('HTML 내용이 적용되었습니다.', 'info');
+                            }
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                }
+            } else {
+                posts.unshift(post);
+                saveData();
+                showHome();
+                showNotification('게시글이 작성되었습니다!', 'success');
+                if (content.includes('<') && content.includes('>')) {
+                    showNotification('HTML 내용이 적용되었습니다.', 'info');
+                }
+            }
+        }
+
+        function showAllPosts() {
+            const container = document.getElementById('postsContainer');
+            const filteredPosts = posts.filter(p => !p.isNotice);
+            container.innerHTML = filteredPosts.map(post => createPostHTML(post)).join('');
+            updateStats();
+        }
+
+        function showNotices() {
+            const container = document.getElementById('postsContainer');
+            const notices = posts.filter(p => p.isNotice);
+            container.innerHTML = notices.map(post => createPostHTML(post)).join('');
+        }
+
+        function createPostHTML(post) {
+            const postComments = comments.filter(c => c.postId === post.id);
+            const isLiked = currentUser && post.likedBy.includes(currentUser.id);
+            
+            return `
+                <div class="bg-white p-6 rounded-lg shadow-lg card-hover">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center space-x-3">
+                            <img src="${post.authorProfileImage || generateProfileImage(post.authorNickname)}" alt="프로필" class="w-12 h-12 rounded-full border-2 border-green-500">
+                            <div>
+                                <h4 class="font-semibold cursor-pointer hover:text-green-600" onclick="showProfile('${post.authorId}')">${post.authorNickname}</h4>
+                                <p class="text-sm text-gray-500">${new Date(post.createdAt).toLocaleString()}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            ${post.isNotice ? '<span class="bg-red-500 text-white px-2 py-1 rounded text-sm"><i class="fas fa-bullhorn mr-1"></i>공지</span>' : ''}
+                            ${currentUser && currentUser.id !== post.authorId ? `
+                                <button onclick="toggleFollow('${post.authorId}')" class="px-3 py-1 rounded text-sm ${isFollowing(post.authorId) ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'} text-white">
+                                    <i class="fas ${isFollowing(post.authorId) ? 'fa-user-minus' : 'fa-user-plus'} mr-1"></i>
+                                    ${isFollowing(post.authorId) ? '언팔로우' : '팔로우'}
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                    
+                    <h3 class="text-xl font-bold mb-2 text-gray-800">${post.title}</h3>
+                    
+                    ${post.category ? `<span class="inline-block bg-green-100 text-green-800 px-2 py-1 rounded text-sm mb-2"><i class="fas fa-folder mr-1"></i>${post.category}</span>` : ''}
+                    
+                    <div class="mb-4 text-gray-700">${post.content.includes('<') && post.content.includes('>') ? post.content : post.content.replace(/\n/g, '<br>')}</div>
+                    
+                    ${post.tags.length > 0 ? `
+                        <div class="mb-4">
+                            ${post.tags.map(tag => `<span class="inline-block bg-gray-200 text-gray-700 px-2 py-1 rounded text-sm mr-2"><i class="fas fa-tag mr-1"></i>${tag}</span>`).join('')}
+                        </div>
+                    ` : ''}
+                    
+                    ${post.files.length > 0 ? `
+                        <div class="mb-4">
+                            <h5 class="font-semibold mb-2"><i class="fas fa-paperclip mr-1"></i>첨부파일:</h5>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                ${post.files.map((file, index) => `
+                                    <div class="flex items-center justify-between bg-gray-50 p-2 rounded">
+                                        <span class="text-sm truncate">${file.name}</span>
+                                        <div class="flex space-x-1">
+                                            <button onclick="downloadFile('${post.id}', ${index})" class="text-blue-500 hover:text-blue-700 text-sm">
+                                                <i class="fas fa-download"></i>
+                                            </button>
+                                            <button onclick="previewFile('${post.id}', ${index})" class="text-green-500 hover:text-green-700 text-sm">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                    
+                    <div class="flex items-center justify-between border-t pt-4">
+                        <div class="flex items-center space-x-4">
+                            <button onclick="toggleLike('${post.id}')" class="flex items-center space-x-1 ${isLiked ? 'text-red-500' : 'text-gray-500'} hover:text-red-600">
+                                <i class="fas ${isLiked ? 'fa-heart' : 'fa-heart'} ${isLiked ? '' : 'far'}"></i>
+                                <span>${post.likes}</span>
+                            </button>
+                            <span class="text-gray-500 flex items-center">
+                                <i class="fas fa-comment mr-1"></i>${postComments.length}
+                            </span>
+                        </div>
+                        ${currentUser && (currentUser.isAdmin || currentUser.id === post.authorId) ? `
+                            <button onclick="deletePost('${post.id}')" class="text-red-500 hover:text-red-700 text-sm">
+                                <i class="fas fa-trash mr-1"></i>삭제
+                            </button>
+                        ` : ''}
+                    </div>
+                    
+                    <div class="mt-4 border-t pt-4">
+                        ${currentUser ? `
+                            <form onsubmit="addComment(event, '${post.id}')" class="mb-4">
+                                <div class="flex space-x-2">
+                                    <input type="text" placeholder="댓글을 입력하세요..." required class="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:border-green-500">
+                                    <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">
+                                        <i class="fas fa-paper-plane"></i>
+                                    </button>
+                                </div>
+                            </form>
+                        ` : ''}
+                        
+                        <div class="space-y-2">
+                            ${postComments.map(comment => `
+                                <div class="flex items-start space-x-2 bg-gray-50 p-3 rounded">
+                                    <img src="${comment.authorProfileImage || generateProfileImage(comment.authorNickname)}" alt="프로필" class="w-8 h-8 rounded-full">
+                                    <div class="flex-1">
+                                        <div class="flex items-center space-x-2">
+                                            <span class="font-semibold cursor-pointer hover:text-green-600" onclick="showProfile('${comment.authorId}')">${comment.authorNickname}</span>
+                                            <span class="text-xs text-gray-500">${new Date(comment.createdAt).toLocaleString()}</span>
+                                            ${currentUser && (currentUser.isAdmin || currentUser.id === comment.authorId) ? `
+                                                <button onclick="deleteComment('${comment.id}')" class="text-red-500 hover:text-red-700 text-xs">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            ` : ''}
+                                        </div>
+                                        <p class="text-gray-700">${comment.content}</p>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function addComment(event, postId) {
+            event.preventDefault();
+            const input = event.target.querySelector('input');
+            const content = input.value.trim();
+            
+            if (!content) return;
+            
+            if (containsBadWords(content)) {
+                showNotification('부적절한 내용이 포함되어 있습니다.', 'error');
+                return;
+            }
+            
+            const comment = {
+                id: Date.now().toString(), postId, content,
+                authorId: currentUser.id, authorNickname: currentUser.nickname,
+                authorProfileImage: currentUser.profileImage || generateProfileImage(currentUser.nickname),
+                createdAt: new Date().toISOString()
+            };
+            
+            comments.push(comment);
+            saveData();
+            input.value = '';
+            showAllPosts();
+            showNotification('댓글이 추가되었습니다!', 'success');
+        }
+
+        function toggleLike(postId) {
+            if (!currentUser) {
+                showNotification('로그인이 필요합니다.', 'error');
+                return;
+            }
+            
+            const post = posts.find(p => p.id === postId);
+            if (!post) return;
+            
+            const likedIndex = post.likedBy.indexOf(currentUser.id);
+            
+            if (likedIndex > -1) {
+                post.likedBy.splice(likedIndex, 1);
+                post.likes--;
+            } else {
+                post.likedBy.push(currentUser.id);
+                post.likes++;
+            }
+            
+            saveData();
+            showAllPosts();
+        }
+
+        function deletePost(postId) {
+            if (!confirm('정말 삭제하시겠습니까?')) return;
+            
+            posts = posts.filter(p => p.id !== postId);
+            comments = comments.filter(c => c.postId !== postId);
+            saveData();
+            showAllPosts();
+            showNotification('게시글이 삭제되었습니다.', 'success');
+        }
+
+        function deleteComment(commentId) {
+            if (!confirm('정말 삭제하시겠습니까?')) return;
+            
+            comments = comments.filter(c => c.id !== commentId);
+            saveData();
+            showAllPosts();
+            showNotification('댓글이 삭제되었습니다.', 'success');
+        }
+
+        function downloadFile(postId, fileIndex) {
+            const post = posts.find(p => p.id === postId);
+            if (!post || !post.files[fileIndex]) return;
+            
+            const file = post.files[fileIndex];
+            const link = document.createElement('a');
+            link.href = file.data;
+            link.download = file.name;
+            link.click();
+        }
+
+        function previewFile(postId, fileIndex) {
+            const post = posts.find(p => p.id === postId);
+            if (!post || !post.files[fileIndex]) return;
+            
+            const file = post.files[fileIndex];
+            let content = '';
+            
+            if (file.type.startsWith('image/')) {
+                content = `<img src="${file.data}" alt="${file.name}" class="max-w-full max-h-96 mx-auto">`;
+            } else if (file.type.startsWith('text/')) {
+                fetch(file.data).then(response => response.text()).then(text => {
+                    showModal('파일 미리보기', `<pre class="bg-gray-100 p-4 rounded max-h-96 overflow-auto text-sm">${text}</pre>`);
+                });
+                return;
+            } else if (file.type === 'application/pdf') {
+                content = `<iframe src="${file.data}" class="w-full h-96"></iframe>`;
+            } else {
+                content = `
+                    <div class="text-center p-8">
+                        <i class="fas fa-file text-6xl text-gray-400 mb-4"></i>
+                        <p class="text-lg font-semibold">${file.name}</p>
+                        <p class="text-gray-600">크기: ${(file.size / 1024).toFixed(2)} KB</p>
+                        <p class="text-gray-500 mt-2">미리보기를 지원하지 않는 파일 형식입니다.</p>
+                    </div>
+                `;
+            }
+            
+            showModal('파일 미리보기', content);
+        }
+
+        function searchPosts() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            if (!query) {
+                showAllPosts();
+                return;
+            }
+            
+            const filteredPosts = posts.filter(post => 
+                post.title.toLowerCase().includes(query) ||
+                post.content.toLowerCase().includes(query) ||
+                post.tags.some(tag => tag.toLowerCase().includes(query)) ||
+                post.category.toLowerCase().includes(query)
+            );
+            
+            const container = document.getElementById('postsContainer');
+            container.innerHTML = filteredPosts.map(post => createPostHTML(post)).join('');
+        }
+
+        function updateProfile(event) {
+            event.preventDefault();
+            
+            const nickname = document.getElementById('editNickname').value;
+            const password = document.getElementById('editPassword').value;
+            const autoAttendance = document.getElementById('autoAttendance').checked;
+            const profileImageFile = document.getElementById('profileImage').files[0];
+            
+            if (nickname !== currentUser.nickname && users.find(u => u.nickname === nickname)) {
+                showNotification('이미 존재하는 닉네임입니다.', 'error');
+                return;
+            }
+            
+            currentUser.nickname = nickname;
+            currentUser.autoAttendance = autoAttendance;
+            
+            if (password) {
+                currentUser.password = password;
+                currentUser.needsPasswordReset = false;
+            }
+            
+            if (profileImageFile) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    currentUser.profileImage = e.target.result;
+                    updateUserInArray();
+                    saveData();
+                    updateUI();
+                    closeModal();
+                    showNotification('프로필이 업데이트되었습니다!', 'success');
+                };
+                reader.readAsDataURL(profileImageFile);
+            } else {
+                updateUserInArray();
+                saveData();
+                updateUI();
+                closeModal();
+                showNotification('프로필이 업데이트되었습니다!', 'success');
+            }
+        }
+
+        function removeProfileImage() {
+            currentUser.profileImage = '';
+            updateUserInArray();
+            saveData();
+            updateUI();
+            showNotification('프로필 이미지가 삭제되었습니다.', 'success');
+        }
+
+        function updateUserInArray() {
+            const userIndex = users.findIndex(u => u.id === currentUser.id);
+            if (userIndex > -1) {
+                users[userIndex] = { ...currentUser };
+            }
+        }
+
+        function toggleFollow(targetUserId) {
+            if (!currentUser) return;
+            
+            const followIndex = follows.findIndex(f => f.followerId === currentUser.id && f.followingId === targetUserId);
+            
+            if (followIndex > -1) {
+                follows.splice(followIndex, 1);
+                showNotification('언팔로우했습니다.', 'success');
+            } else {
+                follows.push({
+                    followerId: currentUser.id,
+                    followingId: targetUserId,
+                    createdAt: new Date().toISOString()
+                });
+                showNotification('팔로우했습니다!', 'success');
+            }
+            
+            updateFollowerCounts();
+            saveData();
+            showAllPosts();
+        }
+
+        function isFollowing(targetUserId) {
+            if (!currentUser) return false;
+            return follows.some(f => f.followerId === currentUser.id && f.followingId === targetUserId);
+        }
+
+        function updateFollowerCounts() {
+            users.forEach(user => {
+                user.followers = follows.filter(f => f.followingId === user.id).length;
+                user.following = follows.filter(f => f.followerId === user.id).length;
+            });
+        }
+
+        function checkAttendance() {
+            if (!currentUser) return;
+            
+            const today = new Date().toDateString();
+            const todayAttendance = attendance.find(a => a.userId === currentUser.id && a.date === today);
+            
+            if (todayAttendance) {
+                showNotification('오늘은 이미 출석체크를 완료했습니다!', 'info');
+                return;
+            }
+            
+            attendance.push({
+                userId: currentUser.id,
+                date: today,
+                timestamp: new Date().toISOString()
+            });
+            
+            saveData();
+            showNotification('출석체크 완료! 🎉', 'success');
+        }
+
+        function containsBadWords(text) {
+            const badWords = ['욕설1', '욕설2', '부적절한단어'];
+            return badWords.some(word => text.toLowerCase().includes(word.toLowerCase()));
+        }
+
+        // Email functions
+        function loadEmails() {
+            const userEmails = emails.filter(e => e.recipientId === currentUser.id);
+            const emailList = document.getElementById('emailList');
+            
+            emailList.innerHTML = userEmails.map(email => `
+                <div class="p-3 border rounded cursor-pointer hover:bg-gray-50" onclick="viewEmail('${email.id}')">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h5 class="font-semibold">${email.senderNickname}</h5>
+                            <p class="text-sm text-gray-600 truncate">${email.subject}</p>
+                        </div>
+                        <span class="text-xs text-gray-500">${new Date(email.createdAt).toLocaleDateString()}</span>
+                    </div>
+                </div>
+            `).join('') || '<p class="text-gray-500 text-center">받은 메일이 없습니다.</p>';
+        }
+
+        function setupEmailSearch() {
+            const input = document.getElementById('emailRecipient');
+            const suggestions = document.getElementById('userSuggestions');
+            
+            if (!input || !suggestions) {
+                console.error('이메일 검색 요소를 찾을 수 없습니다.');
+                return;
+            }
+            
+            // 기존 이벤트 리스너 제거
+            input.removeEventListener('input', handleEmailSearch);
+            input.removeEventListener('focus', handleEmailFocus);
+            input.removeEventListener('blur', handleEmailBlur);
+            
+            // 새 이벤트 리스너 추가
+            input.addEventListener('input', handleEmailSearch);
+            input.addEventListener('focus', handleEmailFocus);
+            input.addEventListener('blur', handleEmailBlur);
+        }
+
+        function handleEmailSearch(event) {
+            const query = event.target.value.toLowerCase().trim();
+            const suggestions = document.getElementById('userSuggestions');
+            
+            if (query.length < 1) {
+                suggestions.classList.add('hidden');
+                suggestions.innerHTML = '';
+                return;
+            }
+            
+            const filteredUsers = users.filter(u => 
+                u.id !== currentUser.id && 
+                (u.nickname.toLowerCase().includes(query) || u.id.toLowerCase().includes(query))
+            );
+            
+            if (filteredUsers.length > 0) {
+                suggestions.innerHTML = filteredUsers.map(user => `
+                    <div class="p-2 hover:bg-gray-100 cursor-pointer border-b last:border-b-0" onmousedown="selectUser('${user.id}', '${user.nickname}')">
+                        <div class="flex items-center space-x-2">
+                            <img src="${user.profileImage || generateProfileImage(user.nickname)}" alt="프로필" class="w-6 h-6 rounded-full">
+                            <div>
+                                <div class="font-medium">${user.nickname}</div>
+                                <div class="text-xs text-gray-500">${user.id}</div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+                suggestions.classList.remove('hidden');
+            } else {
+                suggestions.innerHTML = '<div class="p-2 text-gray-500 text-center">검색 결과가 없습니다.</div>';
+                suggestions.classList.remove('hidden');
+            }
+        }
+
+        function handleEmailFocus(event) {
+            const query = event.target.value.toLowerCase().trim();
+            if (query.length > 0) {
+                handleEmailSearch(event);
+            }
+        }
+
+        function handleEmailBlur(event) {
+            // 약간의 지연을 두어 클릭 이벤트가 먼저 처리되도록 함
+            setTimeout(() => {
+                const suggestions = document.getElementById('userSuggestions');
+                if (suggestions) {
+                    suggestions.classList.add('hidden');
+                }
+            }, 200);
+        }
+
+        function selectUser(userId, nickname) {
+            const input = document.getElementById('emailRecipient');
+            const suggestions = document.getElementById('userSuggestions');
+            
+            if (input && suggestions) {
+                input.value = nickname;
+                input.dataset.userId = userId;
+                suggestions.classList.add('hidden');
+                suggestions.innerHTML = '';
+                
+                // 포커스를 다음 입력 필드로 이동
+                const subjectInput = document.getElementById('emailSubject');
+                if (subjectInput) {
+                    subjectInput.focus();
+                }
+            }
+        }
+
+        function sendEmail(event) {
+            event.preventDefault();
+            
+            const recipientInput = document.getElementById('emailRecipient');
+            const recipientId = recipientInput.dataset.userId;
+            const subject = document.getElementById('emailSubject').value;
+            const content = document.getElementById('emailContent').value;
+            
+            if (!recipientId) {
+                showNotification('받는 사람을 선택해주세요.', 'error');
+                return;
+            }
+            
+            const email = {
+                id: Date.now().toString(),
+                senderId: currentUser.id,
+                senderNickname: currentUser.nickname,
+                recipientId: recipientId,
+                subject: subject,
+                content: content,
+                createdAt: new Date().toISOString(),
+                isRead: false
+            };
+            
+            emails.push(email);
+            saveData();
+            
+            // Clear form
+            document.getElementById('emailSubject').value = '';
+            document.getElementById('emailContent').value = '';
+            recipientInput.value = '';
+            delete recipientInput.dataset.userId;
+            
+            showNotification('메일이 전송되었습니다!', 'success');
+            loadEmails();
+        }
+
+        function viewEmail(emailId) {
+            const email = emails.find(e => e.id === emailId);
+            if (!email) return;
+            
+            email.isRead = true;
+            saveData();
+            
+            showModal('메일 보기', `
+                <div class="space-y-4">
+                    <div class="border-b pb-4">
+                        <h3 class="text-lg font-semibold">${email.subject}</h3>
+                        <p class="text-sm text-gray-600">보낸 사람: ${email.senderNickname}</p>
+                        <p class="text-sm text-gray-600">받은 시간: ${new Date(email.createdAt).toLocaleString()}</p>
+                    </div>
+                    <div class="whitespace-pre-wrap">${email.content}</div>
+                </div>
+            `);
+        }
+
+        // Admin functions
+        function showAddMember() {
+            showModal('회원 추가', `
+                <form onsubmit="addMember(event)">
+                    <div class="mb-4">
+                        <label class="block text-gray-700 mb-2">아이디</label>
+                        <input type="text" id="newMemberId" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 mb-2">닉네임</label>
+                        <input type="text" id="newMemberNickname" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 mb-2">비밀번호</label>
+                        <input type="password" id="newMemberPassword" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500">
+                    </div>
+                    <div class="mb-6">
+                        <label class="flex items-center">
+                            <input type="checkbox" id="newMemberAdmin" class="mr-2">
+                            <span class="text-gray-700">관리자 권한 부여</span>
+                        </label>
+                    </div>
+                    <div class="flex space-x-4">
+                        <button type="submit" class="gradient-bg text-white px-6 py-2 rounded-lg hover:opacity-90">추가</button>
+                        <button type="button" onclick="closeModal()" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600">취소</button>
+                    </div>
+                </form>
+            `);
+        }
+
+        function addMember(event) {
+            event.preventDefault();
+            
+            const id = document.getElementById('newMemberId').value;
+            const nickname = document.getElementById('newMemberNickname').value;
+            const password = document.getElementById('newMemberPassword').value;
+            const isAdmin = document.getElementById('newMemberAdmin').checked;
+            
+            if (users.find(u => u.id === id)) {
+                showNotification('이미 존재하는 아이디입니다.', 'error');
+                return;
+            }
+            
+            if (users.find(u => u.nickname === nickname)) {
+                showNotification('이미 존재하는 닉네임입니다.', 'error');
+                return;
+            }
+            
+            const newUser = {
+                id, password, nickname, isAdmin, isBlocked: false, needsPasswordReset: false,
+                profileImage: generateProfileImage(nickname), autoAttendance: false,
+                joinDate: new Date().toISOString(), followers: 0, following: 0
+            };
+            
+            users.push(newUser);
+            saveData();
+            closeModal();
+            showNotification('새 회원이 추가되었습니다!', 'success');
+        }
+
+        function showMemberList() {
+            showModal('회원 목록', `
+                <div class="space-y-3 max-h-96 overflow-y-auto">
+                    ${users.map(user => `
+                        <div class="flex items-center justify-between p-3 border rounded">
+                            <div class="flex items-center space-x-3">
+                                <img src="${user.profileImage || generateProfileImage(user.nickname)}" alt="프로필" class="w-10 h-10 rounded-full">
+                                <div>
+                                    <span class="font-semibold">${user.nickname}</span>
+                                    <span class="text-gray-500 text-sm">(${user.id})</span>
+                                    ${user.isAdmin ? '<span class="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs ml-2">관리자</span>' : ''}
+                                    ${user.isBlocked ? '<span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs ml-2">차단됨</span>' : ''}
+                                </div>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button onclick="toggleUserBlock('${user.id}')" class="px-3 py-1 rounded text-sm ${user.isBlocked ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600'} text-white">
+                                    ${user.isBlocked ? '차단해제' : '차단'}
+                                </button>
+                                <button onclick="toggleUserAdmin('${user.id}')" class="px-3 py-1 rounded text-sm ${user.isAdmin ? 'bg-gray-500 hover:bg-gray-600' : 'bg-purple-500 hover:bg-purple-600'} text-white">
+                                    ${user.isAdmin ? '관리자 해제' : '관리자 권한'}
+                                </button>
+                                <button onclick="editUserProfile('${user.id}')" class="px-3 py-1 rounded text-sm bg-blue-500 hover:bg-blue-600 text-white">
+                                    수정
+                                </button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `, 'large');
+        }
+
+        function toggleUserBlock(userId) {
+            const user = users.find(u => u.id === userId);
+            if (!user || user.id === currentUser.id) return;
+            
+            user.isBlocked = !user.isBlocked;
+            saveData();
+            showNotification(`${user.nickname}님이 ${user.isBlocked ? '차단' : '차단해제'}되었습니다.`, 'success');
+            showMemberList();
+        }
+
+        function toggleUserAdmin(userId) {
+            const user = users.find(u => u.id === userId);
+            if (!user || user.id === currentUser.id) return;
+            
+            user.isAdmin = !user.isAdmin;
+            saveData();
+            showNotification(`${user.nickname}님의 관리자 권한이 ${user.isAdmin ? '부여' : '해제'}되었습니다.`, 'success');
+            showMemberList();
+        }
+
+        function editUserProfile(userId) {
+            const user = users.find(u => u.id === userId);
+            if (!user) return;
+            
+            showModal('회원정보 수정', `
+                <form onsubmit="updateUserProfile(event, '${userId}')">
+                    <div class="mb-4">
+                        <label class="block text-gray-700 mb-2">닉네임</label>
+                        <input type="text" id="editUserNickname" value="${user.nickname}" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 mb-2">새 비밀번호 (변경시에만 입력)</label>
+                        <input type="password" id="editUserPassword" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-green-500">
+                    </div>
+                    <div class="mb-6">
+                        <label class="flex items-center">
+                            <input type="checkbox" id="editUserAdmin" ${user.isAdmin ? 'checked' : ''} class="mr-2">
+                            <span class="text-gray-700">관리자 권한</span>
+                        </label>
+                    </div>
+                    <div class="flex space-x-4">
+                        <button type="submit" class="gradient-bg text-white px-6 py-2 rounded-lg hover:opacity-90">수정</button>
+                        <button type="button" onclick="closeModal()" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600">취소</button>
+                    </div>
+                </form>
+            `);
+        }
+
+        function updateUserProfile(event, userId) {
+            event.preventDefault();
+            
+            const user = users.find(u => u.id === userId);
+            if (!user) return;
+            
+            const nickname = document.getElementById('editUserNickname').value;
+            const password = document.getElementById('editUserPassword').value;
+            const isAdmin = document.getElementById('editUserAdmin').checked;
+            
+            if (nickname !== user.nickname && users.find(u => u.nickname === nickname)) {
+                showNotification('이미 존재하는 닉네임입니다.', 'error');
+                return;
+            }
+            
+            user.nickname = nickname;
+            user.isAdmin = isAdmin;
+            
+            if (password) {
+                user.password = password;
+                user.needsPasswordReset = false;
+            }
+            
+            saveData();
+            closeModal();
+            showNotification('회원정보가 수정되었습니다!', 'success');
+        }
+
+        function showPostManagement() {
+            showModal('게시글 관리', `
+                <div class="space-y-3 max-h-96 overflow-y-auto">
+                    ${posts.map(post => `
+                        <div class="flex items-center justify-between p-3 border rounded">
+                            <div>
+                                <h5 class="font-semibold">${post.title}</h5>
+                                <p class="text-sm text-gray-600">작성자: ${post.authorNickname} | ${new Date(post.createdAt).toLocaleDateString()}</p>
+                                ${post.isNotice ? '<span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs">공지사항</span>' : ''}
+                            </div>
+                            <button onclick="deletePost('${post.id}'); closeModal();" class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">
+                                <i class="fas fa-trash mr-1"></i>삭제
+                            </button>
+                        </div>
+                    `).join('')}
+                </div>
+            `, 'large');
+        }
+
+        function showCommentManagement() {
+            showModal('댓글 관리', `
+                <div class="space-y-3 max-h-96 overflow-y-auto">
+                    ${comments.map(comment => {
+                        const post = posts.find(p => p.id === comment.postId);
+                        return `
+                            <div class="flex items-center justify-between p-3 border rounded">
+                                <div>
+                                    <p class="font-semibold">${comment.content}</p>
+                                    <p class="text-sm text-gray-600">작성자: ${comment.authorNickname} | 게시글: ${post ? post.title : '삭제된 게시글'}</p>
+                                    <p class="text-xs text-gray-500">${new Date(comment.createdAt).toLocaleDateString()}</p>
+                                </div>
+                                <button onclick="deleteComment('${comment.id}'); closeModal();" class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600">
+                                    <i class="fas fa-trash mr-1"></i>삭제
+                                </button>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `, 'large');
+        }
+
+        function backupData() {
+            const backup = {
+                users, posts, comments, follows, attendance, emails,
+                timestamp: new Date().toISOString()
+            };
+            
+            const dataStr = JSON.stringify(backup, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(dataBlob);
+            link.download = `syblog_backup_${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            
+            showNotification('데이터 백업이 완료되었습니다!', 'success');
+        }
+
+        function showEditHTML() {
+            const currentHTML = `<!DOCTYPE html>\n${document.documentElement.outerHTML}`;
+            showModal('전체 HTML 편집', `
+                <div class="mb-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="block text-gray-700 font-semibold">전체 HTML 코드</label>
+                        <div class="flex space-x-2">
+                            <button onclick="downloadHTML()" class="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600">
+                                <i class="fas fa-download mr-1"></i>다운로드
+                            </button>
+                            <button onclick="loadHTMLFile()" class="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600">
+                                <i class="fas fa-upload mr-1"></i>파일 불러오기
+                            </button>
+                        </div>
+                    </div>
+                    <textarea id="htmlEditor" rows="20" class="w-full p-4 border rounded font-mono text-xs resize-none" style="font-family: 'Courier New', monospace;">${currentHTML.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</textarea>
+                    <input type="file" id="htmlFileInput" accept=".html,.htm" class="hidden" onchange="handleHTMLFile(event)">
+                </div>
+                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+                    <div class="flex">
+                        <i class="fas fa-exclamation-triangle text-yellow-400 mr-2 mt-1"></i>
+                        <div>
+                            <p class="text-sm text-yellow-700">
+                                <strong>주의:</strong> 전체 HTML을 수정하면 현재 페이지가 완전히 바뀝니다. 
+                                잘못된 코드를 입력하면 페이지가 작동하지 않을 수 있습니다.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex space-x-4">
+                    <button onclick="applyHTMLChanges()" class="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600">
+                        <i class="fas fa-code mr-1"></i>HTML 적용
+                    </button>
+                    <button onclick="resetToBackup()" class="bg-orange-500 text-white px-6 py-2 rounded-lg hover:bg-orange-600">
+                        <i class="fas fa-undo mr-1"></i>백업으로 복원
+                    </button>
+                    <button onclick="closeModal()" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600">
+                        <i class="fas fa-times mr-1"></i>취소
+                    </button>
+                </div>
+            `, 'large');
+        }
+
+        function applyHTMLChanges() {
+            if (!confirm('정말로 전체 HTML을 변경하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
+                return;
+            }
+            
+            const newHTML = document.getElementById('htmlEditor').value;
+            
+            try {
+                // 현재 상태를 백업
+                const currentBackup = {
+                    html: `<!DOCTYPE html>\n${document.documentElement.outerHTML}`,
+                    data: { users, posts, comments, follows, attendance, emails },
+                    timestamp: new Date().toISOString()
+                };
+                localStorage.setItem('syblog_html_backup', JSON.stringify(currentBackup));
+                
+                // 새 HTML 적용
+                document.open();
+                document.write(newHTML);
+                document.close();
+                
+                showNotification('HTML이 성공적으로 적용되었습니다!', 'success');
+            } catch (error) {
+                showNotification('HTML 적용 중 오류가 발생했습니다: ' + error.message, 'error');
+                console.error('HTML 적용 오류:', error);
+            }
+        }
+
+        function downloadHTML() {
+            const htmlContent = document.getElementById('htmlEditor').value;
+            const blob = new Blob([htmlContent], { type: 'text/html' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `syblog_${new Date().toISOString().split('T')[0]}.html`;
+            link.click();
+            showNotification('HTML 파일이 다운로드되었습니다!', 'success');
+        }
+
+        function loadHTMLFile() {
+            document.getElementById('htmlFileInput').click();
+        }
+
+        function handleHTMLFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('htmlEditor').value = e.target.result;
+                showNotification('HTML 파일이 로드되었습니다!', 'success');
+            };
+            reader.readAsText(file);
+        }
+
+        function resetToBackup() {
+            const backup = localStorage.getItem('syblog_html_backup');
+            if (!backup) {
+                showNotification('백업된 HTML이 없습니다.', 'error');
+                return;
+            }
+            
+            if (!confirm('백업된 HTML로 복원하시겠습니까?')) {
+                return;
+            }
+            
+            try {
+                const backupData = JSON.parse(backup);
+                document.getElementById('htmlEditor').value = backupData.html;
+                showNotification('백업된 HTML로 복원되었습니다!', 'success');
+            } catch (error) {
+                showNotification('백업 복원 중 오류가 발생했습니다.', 'error');
+            }
+        }
+
+        // Utility functions
+        function togglePassword(inputId) {
+            const input = document.getElementById(inputId);
+            const icon = input.nextElementSibling.querySelector('i');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'fas fa-eye-slash';
+            } else {
+                input.type = 'password';
+                icon.className = 'fas fa-eye';
+            }
+        }
+
+        function showNotification(message, type = 'info') {
+            const notification = document.getElementById('notification');
+            const text = document.getElementById('notificationText');
+            const icon = document.getElementById('notificationIcon');
+            
+            text.textContent = message;
+            
+            const colors = {
+                error: 'border-red-500',
+                success: 'border-green-500',
+                info: 'border-blue-500',
+                warning: 'border-yellow-500'
+            };
+            
+            const icons = {
+                error: 'fas fa-exclamation-circle text-red-500',
+                success: 'fas fa-check-circle text-green-500',
+                info: 'fas fa-info-circle text-blue-500',
+                warning: 'fas fa-exclamation-triangle text-yellow-500'
+            };
+            
+            notification.className = `fixed top-20 right-4 z-50 max-w-sm`;
+            notification.querySelector('div').className = `bg-white border-l-4 ${colors[type]} p-4 rounded-lg shadow-lg`;
+            icon.className = icons[type];
+            
+            notification.classList.remove('hidden');
+            
+            setTimeout(() => {
+                notification.classList.add('hidden');
+            }, 3000);
+        }
+
+        function showModal(title, content, size = 'normal') {
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
+            modal.onclick = (e) => {
+                if (e.target === modal) closeModal();
+            };
+            
+            const sizeClasses = {
+                normal: 'max-w-md w-full',
+                large: 'max-w-4xl w-full'
+            };
+            
+            modal.innerHTML = `
+                <div class="${sizeClasses[size]} bg-white rounded-lg shadow-lg max-h-screen overflow-y-auto">
+                    <div class="flex justify-between items-center p-6 border-b">
+                        <h3 class="text-xl font-bold text-gray-800">${title}</h3>
+                        <button onclick="closeModal()" class="text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    <div class="p-6">
+                        ${content}
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('modalContainer').appendChild(modal);
+        }
+
+        function closeModal() {
+            const modal = document.querySelector('#modalContainer > div');
+            if (modal) modal.remove();
+        }
+
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97ec4adb9393018f',t:'MTc1NzgxNTI0NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
